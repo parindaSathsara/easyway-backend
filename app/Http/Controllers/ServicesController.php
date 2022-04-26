@@ -12,8 +12,6 @@ use Illuminate\Support\Facades\DB;
 
 class ServicesController extends Controller{
 
-
-
     public function getservices()
     {
         $services = ServicesModel::all();

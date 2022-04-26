@@ -7,22 +7,20 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Laravel\Sanctum\HasApiTokens;
 
-class ListingModel extends Model{
+class CartModel extends Model{
     use HasApiTokens, HasFactory;
 
-    protected $table="service_listings";
+    protected $table="ewcart";
 
     protected $fillable=[
-        'partnerid',
-        'listingtitle',
-        'listingpublishdate',
-        'listingendingdate',
-        'listingtype',
-        'listingprice',
-        'listingdescription'
+        'userid',
+        'listingid',
+        'listingtypeid',
+        'quantity',
+        'totalprice',
+        'status',
+        'purpose'
     ];
-
-    
 
     public $timestamps=false;
 

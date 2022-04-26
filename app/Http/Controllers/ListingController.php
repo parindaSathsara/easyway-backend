@@ -53,10 +53,83 @@ class ListingController extends Controller
     //         'message' => 'Service Deleted Successful'
     //     ]);
     // }
+
+
+    public function getListingsImages($id)
+    {
+        $listings = DB::table('listing_images')
+            ->select('listing_images.listingimageurl')
+            ->where('listing_images.listingid', $id)
+            ->get();
+
+        return response()->json([
+            'status' => 200,
+            'listings' => $listings,
+        ]);
+    }
+
+    public function getListingsByID($id)
+    {
+        $listingType = DB::table('service_listings')
+            ->where('listingid', $id)
+            ->first();
+
+        $listings = DB::table('service_listings')
+            ->join('listing_images', 'service_listings.listingid', '=', 'listing_images.listingid')
+            ->join('partner','service_listings.partnerid','=','partner.partnerid')
+            ->join('services','partner.serviceid','=','services.serviceid')
+            ->groupBy('listing_images.listingid')
+            ->where('service_listings.listingid', $id)
+            ->limit(1)
+            ->get();
+
+
+        if ($listingType->listingtype == "Variation") {
+
+            $listingvariations = DB::table('listing_variations')
+                ->where('listingid', $id)
+                ->get();
+
+
+            return response()->json([
+                'status' => 200,
+                'listings' => $listings,
+                'listingvariations' => $listingvariations,
+                'listingtype' => $listingType->listingtype
+            ]);
+        } 
+        
+        else{
+            return response()->json([
+                'status' => 200,
+                'listings' => $listings,
+                'listingtype' => $listingType->listingtype
+            ]);
+        }
+    }
+
+    public function getListingsByPartnerID($id)
+    {
+        $listings = DB::table('service_listings')
+            ->join('listing_images', 'service_listings.listingid', '=', 'listing_images.listingid')
+            ->join('partner','service_listings.partnerid','=','partner.partnerid')
+            ->join('services','partner.serviceid','=','services.serviceid')
+            ->groupBy('listing_images.listingid')
+            ->where('partner.partnerid',$id)
+            ->get();
+        return response()->json([
+            'status' => 200,
+            'listings' => $listings,
+        ]);
+    }
+
+
     public function getListings()
     {
         $listings = DB::table('service_listings')
             ->join('listing_images', 'service_listings.listingid', '=', 'listing_images.listingid')
+            ->join('partner','service_listings.partnerid','=','partner.partnerid')
+            ->join('services','partner.serviceid','=','services.serviceid')
             ->groupBy('listing_images.listingid')
             ->get();
         return response()->json([
@@ -67,8 +140,6 @@ class ListingController extends Controller
 
     public function addListing(Request $request)
     {
-
-
         $validator = Validator::make($request->all(), [
             'listingtitle' => 'required',
             'listingpublishdate' => 'required',
@@ -84,12 +155,13 @@ class ListingController extends Controller
         } else {
 
             $listingModel = ListingModel::create([
+                'partnerid'=>$request->partnerid,
                 'listingtitle' => $request->listingtitle,
                 'listingpublishdate' => $request->listingpublishdate,
                 'listingendingdate' => $request->listingendingdate,
                 'listingtype' => $request->listingtype,
                 'listingprice' => $request->listingprice,
-                'listingdescription'=>$request->listingdescription
+                'listingdescription' => $request->listingdescription
             ]);
 
             $listingModel->createToken($listingModel->listingtitle . '_Token')->plainTextToken;
@@ -121,7 +193,7 @@ class ListingController extends Controller
                     'listingid' => $listingModel->id,
                     'status' => 200,
                     'message' => 'Listing Added Successful',
-                    'messageDescription'=>$listingModel->listingdescription
+                    'messageDescription' => $listingModel->listingdescription
                 ]
             );
         }
