@@ -118,4 +118,70 @@ class CustomerOrderController extends Controller
             'cartCount' => $cartItemCount->count()
         ]);
     }
+
+    public function getOrders()
+    {
+
+        $orders = DB::table('orders')
+            ->join('customer', 'orders.customerid', '=', 'customer.customerid')
+            ->join('service_listings', 'orders.listingid', '=', 'service_listings.listingid')
+            ->join('partner', 'service_listings.partnerid', '=', 'partner.partnerid')
+            ->join('services', 'partner.serviceid', '=', 'services.serviceid')
+            ->limit(10)
+            ->get();
+
+        return response()->json([
+            'status' => 200,
+            'orders' => $orders
+        ]);
+    }
+
+
+    public function getOrdersCount()
+    {
+
+        $orders = DB::table('orders')
+            ->join('customer', 'orders.customerid', '=', 'customer.customerid')
+            ->join('service_listings', 'orders.listingid', '=', 'service_listings.listingid')
+            ->join('partner', 'service_listings.partnerid', '=', 'partner.partnerid')
+            ->join('services', 'partner.serviceid', '=', 'services.serviceid')
+            ->groupBy('orders.orderdate')
+            ->select(
+                'orders.orderdate',
+                DB::raw('count(*) as total'),
+                DB::raw('SUM(services.servicetype="MainService") AS MainServices'),
+                DB::raw('SUM(services.servicetype="OtherService") AS EasyServices'),
+            )
+            ->get();
+
+        return response()->json([
+            'status' => 200,
+            'orders' => $orders,
+        ]);
+    }
+
+
+
+    public function getServicesOrders()
+    {
+
+        $services = DB::table('orders')
+            ->join('customer', 'orders.customerid', '=', 'customer.customerid')
+            ->join('service_listings', 'orders.listingid', '=', 'service_listings.listingid')
+            ->join('partner', 'service_listings.partnerid', '=', 'partner.partnerid')
+            ->join('services', 'partner.serviceid', '=', 'services.serviceid')
+            ->groupBy('services.serviceid')
+            ->select(
+                'services.servicename',
+                DB::raw('count(*) as total'),
+                // DB::raw('SUM(services.servicetype="MainService") AS MainServices'),
+                // DB::raw('SUM(services.servicetype="OtherService") AS EasyServices'),
+            )
+            ->get();
+
+        return response()->json([
+            'status' => 200,
+            'services' => $services,
+        ]);
+    }
 }

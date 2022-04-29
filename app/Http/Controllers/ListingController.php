@@ -55,6 +55,20 @@ class ListingController extends Controller
     // }
 
 
+    public function updateListing($id){
+        ListingModel::where('listingid', $id)->update(['listingstatus' => "Deleted"]);
+        return response()->json([
+            'status' => 200,
+        ]);
+    }
+
+    public function updateListingActive($id){
+        ListingModel::where('listingid', $id)->update(['listingstatus' => "Active"]);
+        return response()->json([
+            'status' => 200,
+        ]);
+    }
+
     public function getListingsImages($id)
     {
         $listings = DB::table('listing_images')
@@ -80,6 +94,8 @@ class ListingController extends Controller
             ->join('services','partner.serviceid','=','services.serviceid')
             ->groupBy('listing_images.listingid')
             ->where('service_listings.listingid', $id)
+            ->where('service_listings.listingstatus',"Active")
+            
             ->limit(1)
             ->get();
 
@@ -116,6 +132,24 @@ class ListingController extends Controller
             ->join('services','partner.serviceid','=','services.serviceid')
             ->groupBy('listing_images.listingid')
             ->where('partner.partnerid',$id)
+            ->where('service_listings.listingstatus',"Active")
+            ->get();
+        return response()->json([
+            'status' => 200,
+            'listings' => $listings,
+        ]);
+    }
+
+
+    public function getDeletedListingsByPartnerID($id)
+    {
+        $listings = DB::table('service_listings')
+            ->join('listing_images', 'service_listings.listingid', '=', 'listing_images.listingid')
+            ->join('partner','service_listings.partnerid','=','partner.partnerid')
+            ->join('services','partner.serviceid','=','services.serviceid')
+            ->groupBy('listing_images.listingid')
+            ->where('partner.partnerid',$id)
+            ->where('service_listings.listingstatus',"Deleted")
             ->get();
         return response()->json([
             'status' => 200,
@@ -131,6 +165,7 @@ class ListingController extends Controller
             ->join('partner','service_listings.partnerid','=','partner.partnerid')
             ->join('services','partner.serviceid','=','services.serviceid')
             ->groupBy('listing_images.listingid')
+            ->where('service_listings.listingstatus',"Active")
             ->get();
         return response()->json([
             'status' => 200,
@@ -161,7 +196,8 @@ class ListingController extends Controller
                 'listingendingdate' => $request->listingendingdate,
                 'listingtype' => $request->listingtype,
                 'listingprice' => $request->listingprice,
-                'listingdescription' => $request->listingdescription
+                'listingdescription' => $request->listingdescription,
+                'listingstatus'=>'Active',
             ]);
 
             $listingModel->createToken($listingModel->listingtitle . '_Token')->plainTextToken;

@@ -34,7 +34,7 @@ class PartnerController extends Controller
             'partners' => $partner,
         ]);
     }
-    
+
 
     public function getPartners($id)
     {
@@ -47,6 +47,83 @@ class PartnerController extends Controller
             'partners' => $partner,
         ]);
     }
+
+
+    public function getPartnerDataCount($id)
+    {
+
+        $totalOrders = DB::table('orders')
+            ->join('service_listings', 'orders.listingid', '=', 'service_listings.listingid')
+            ->join('partner', 'service_listings.partnerid', '=', 'partner.partnerid')
+            ->where('partner.partnerid', $id)
+            ->get();
+
+        $totalListings = DB::table('service_listings')
+            ->where('partnerid', $id)
+            ->get();
+
+        $totalSales = DB::table('orders')
+            ->join('service_listings', 'orders.listingid', '=', 'service_listings.listingid')
+            ->join('partner', 'service_listings.partnerid', '=', 'partner.partnerid')
+            ->where('partner.partnerid', $id)
+            ->groupBy('partner.partnerid')
+            ->select(
+                DB::raw('SUM(orders.totalprice) AS TotPrice'),
+            )
+            ->get();
+
+        $sales=$totalSales->count()==0?[['TotPrice'=>0.00]]:$totalSales;
+        
+
+    
+        return response()->json([
+            'status' => 200,
+            'count' => ['totalOrders' => $totalOrders->count(), 'servicesListings' => $totalListings->count(), 'totalSales' => $sales[0]],
+        ]);
+    }
+
+
+    public function getRecentOrdersPartners($id)
+    {
+
+        $orders = DB::table('orders')
+            ->join('customer', 'orders.customerid', '=', 'customer.customerid')
+            ->join('service_listings', 'orders.listingid', '=', 'service_listings.listingid')
+            ->join('partner', 'service_listings.partnerid', '=', 'partner.partnerid')
+            ->join('services', 'partner.serviceid', '=', 'services.serviceid')
+            ->where('partner.partnerid',$id)
+            ->limit(10)
+            ->get();
+
+        return response()->json([
+            'status' => 200,
+            'orders' => $orders
+        ]);
+    }
+
+
+    public function getPartnerSales()
+    {
+
+        $orders = DB::table('orders')
+            ->join('customer', 'orders.customerid', '=', 'customer.customerid')
+            ->join('service_listings', 'orders.listingid', '=', 'service_listings.listingid')
+            ->join('partner', 'service_listings.partnerid', '=', 'partner.partnerid')
+            ->join('services', 'partner.serviceid', '=', 'services.serviceid')
+            ->groupBy('orders.orderdate')
+            ->select(
+                'orders.orderdate',
+                DB::raw('SUM(orders.totalprice) AS totalprice'),
+            )
+            ->get();
+
+        return response()->json([
+            'status' => 200,
+            'orders' => $orders,
+        ]);
+    }
+
+
 
 
 
@@ -123,7 +200,7 @@ class PartnerController extends Controller
                 'validator_errors' => $validator->errors(),
             ]);
         } else {
-            $partner = DB::table('partner')->where('serviceid', $request->serviceid)->update([
+            $partner = DB::table('partner')->where('partnerid', $request->partnerid)->update([
                 'serviceid' => $request->serviceid,
                 'partnername' => $request->partnername,
                 'contactnumber' => $request->contactnumber,

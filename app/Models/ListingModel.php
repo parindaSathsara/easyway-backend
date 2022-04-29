@@ -13,6 +13,7 @@ class ListingModel extends Model{
     protected $table="service_listings";
 
     protected $fillable=[
+        'listingstatus',
         'partnerid',
         'listingtitle',
         'listingpublishdate',
