@@ -27,7 +27,6 @@ class CustomerOrderController extends Controller
             'contactnumber' => 'required',
             'address' => 'required',
             'district' => 'required',
-            'city' => 'required',
             'paymentoption' => 'required',
         ]);
 
@@ -52,8 +51,8 @@ class CustomerOrderController extends Controller
                     'contactnumber' => $request->contactnumber,
                     'address' => $request->address,
                     'district' => $request->district,
-                    'city' => $request->city,
                     'paymentoption' => $request->paymentoption,
+                    'customerlatlan'=>$request->customerlatlan,
                     'listingtypeid' => $value["listingtypeid"],
                     'quantity' => $value["quantity"],
                     'totalprice' => $value["totalprice"],
@@ -78,8 +77,9 @@ class CustomerOrderController extends Controller
                     'contactnumber' => $request->contactnumber,
                     'address' => $request->address,
                     'district' => $request->district,
-                    'city' => $request->city,
+
                     'paymentoption' => $request->paymentoption,
+                    'customerlatlan'=>$request->customerlatlan,
                     'listingtypeid' => $value["listingtypeid"],
                     'quantity' => $value["quantity"],
                     'totalprice' => $value["totalprice"],

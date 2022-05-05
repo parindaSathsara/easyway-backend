@@ -18,9 +18,7 @@ class ServicesModel extends Model{
         'servicedescription'
     ];
 
-    public $timestamps=false;
-
-    
+    public $timestamps=false;  
 }
 
 

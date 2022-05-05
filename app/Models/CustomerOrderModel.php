@@ -21,11 +21,11 @@ class CustomerOrderModel extends Model
         'contactnumber',
         'address',
         'district',
-        'city',
         'paymentoption',
         'listingtypeid',
         'quantity',
         'totalprice',
+        'customerlatlan'
     ];
 
     public $timestamps=false;

@@ -21,6 +21,8 @@ class CustomerModel extends Model
         'customerusername',
         'customercontact',
         'customerhomeaddress',
+        'joineddate'
+
     ];
 
     public $timestamps = false;

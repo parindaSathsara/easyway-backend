@@ -149,6 +149,40 @@ class RiderController extends Controller
         ]);
     }
 
+
+    public function getOrderByID($id)
+    {
+        $orders = DB::table('orders')
+            ->join('customer', 'orders.customerid', '=', 'customer.customerid')
+            ->join('service_listings', 'orders.listingid', '=', 'service_listings.listingid')
+            ->join('listing_images', 'orders.listingid', '=', 'listing_images.listingid')
+            ->join('partner', 'service_listings.partnerid', '=', 'partner.partnerid')
+            ->select('*', 'partner.address as partneraddress', 'orders.address as orderaddress')
+            ->groupBy('orders.orderid')
+            ->where('orders.orderid', $id)
+            ->get();
+
+        $acceptedOrders = DB::table('deliveryjob')
+            ->join('orders', 'deliveryjob.orderid', '=', 'orders.orderid')
+            ->join('customer', 'orders.customerid', '=', 'customer.customerid')
+            ->join('service_listings', 'orders.listingid', '=', 'service_listings.listingid')
+            ->join('listing_images', 'orders.listingid', '=', 'listing_images.listingid')
+            ->join('partner', 'service_listings.partnerid', '=', 'partner.partnerid')
+            ->join('services', 'partner.serviceid', '=', 'services.serviceid')
+            ->join('deliveryrider', 'deliveryjob.riderid', '=', 'deliveryrider.riderid')
+            ->select('*', 'partner.address as partneraddress', 'orders.address as orderaddress')
+            ->groupBy('orders.orderid')
+            ->where('orders.orderid', $id)
+            ->get();
+
+
+        return response()->json([
+            'status' => 200,
+            'orders' => $orders,
+            'acceptedOrders' => $acceptedOrders
+        ]);
+    }
+
     // public function getOrdersCount()
     // {
 
@@ -188,21 +222,56 @@ class RiderController extends Controller
 
     public function getOrdersNotCollected($id)
     {
-        $deliveryrider=DB::table('deliveryrider')
-        ->where('riderid',$id)
-        ->get();
+        $deliveryrider = DB::table('deliveryrider')
+            ->where('riderid', $id)
+            ->get();
 
         $orders = DB::table('orders')
             ->join('customer', 'orders.customerid', '=', 'customer.customerid')
             ->join('service_listings', 'orders.listingid', '=', 'service_listings.listingid')
             ->join('partner', 'service_listings.partnerid', '=', 'partner.partnerid')
             ->join('services', 'partner.serviceid', '=', 'services.serviceid')
-            ->where('orders.district',$deliveryrider->riderdistrict)
+            ->where('orders.district', $deliveryrider[0]->riderdistrict)
+            ->where('orders.orderstatus', 'OrderPlaced')
             ->get();
+
+        $acceptedOrders = DB::table('deliveryjob')
+            ->join('orders', 'deliveryjob.orderid', '=', 'orders.orderid')
+            ->join('customer', 'orders.customerid', '=', 'customer.customerid')
+            ->join('service_listings', 'orders.listingid', '=', 'service_listings.listingid')
+            ->join('partner', 'service_listings.partnerid', '=', 'partner.partnerid')
+            ->join('services', 'partner.serviceid', '=', 'services.serviceid')
+            ->join('deliveryrider', 'deliveryjob.riderid', '=', 'deliveryrider.riderid')
+            ->where('deliveryrider.riderid', $id)
+            ->where('orders.orderstatus', 'RiderAccept')
+            ->get();
+
+        $pendingOrders = DB::table('deliveryjob')
+            ->join('orders', 'deliveryjob.orderid', '=', 'orders.orderid')
+            ->join('customer', 'orders.customerid', '=', 'customer.customerid')
+            ->join('service_listings', 'orders.listingid', '=', 'service_listings.listingid')
+            ->join('partner', 'service_listings.partnerid', '=', 'partner.partnerid')
+            ->join('services', 'partner.serviceid', '=', 'services.serviceid')
+            ->join('deliveryrider', 'deliveryjob.riderid', '=', 'deliveryrider.riderid')
+            ->where('deliveryrider.riderid', $id)
+            ->where('orders.orderstatus', 'RiderCollected')
+            ->get();
+
+
+        // $orders = DB::table('orders')
+        //     ->join('customer', 'orders.customerid', '=', 'customer.customerid')
+        //     ->join('service_listings', 'orders.listingid', '=', 'service_listings.listingid')
+        //     ->join('partner', 'service_listings.partnerid', '=', 'partner.partnerid')
+        //     ->join('services', 'partner.serviceid', '=', 'services.serviceid')
+        //     ->where('orders.district', $deliveryrider[0]->riderdistrict)
+        //     ->get();
+
 
         return response()->json([
             'status' => 200,
-            'orders' => $orders
+            'orders' => $orders,
+            'acceptedOrders' => $acceptedOrders,
+            'pendingToDelivery'=>$pendingOrders
         ]);
     }
 }

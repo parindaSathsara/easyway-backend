@@ -27,7 +27,8 @@ class PartnerModel extends Model
         'brcopy',
         'accountstatus',
         'servicestatus',
-        'description'
+        'description',
+        'partnerlatlon'
     ];
 
     public $timestamps = false;

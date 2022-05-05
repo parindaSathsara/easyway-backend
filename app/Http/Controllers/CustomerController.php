@@ -6,7 +6,9 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\AdminModel;
 use App\Models\CustomerModel;
+use Carbon\Carbon;
 use Exception;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 
@@ -45,6 +47,8 @@ class CustomerController extends Controller
                 'customerusername' => $request->customerusername,
                 'customercontact' => $request->customercontact,
                 'customerhomeaddress' => $request->customerhomeaddress,
+                
+                'joineddate' => date('Y-m-d')
             ]);
 
             $token = $ewcustomer->createToken($ewcustomer->customeremail . '_Token')->plainTextToken;
@@ -68,15 +72,56 @@ class CustomerController extends Controller
                 'status' => 422,
                 'message' => 'Invalid User Credentials',
             ]);
-        } 
-        
-        else {
+        } else {
             return response()->json([
                 'status' => 200,
                 'user' => $user,
                 'message' => 'User Logged into the System Successfully !'
             ]);
         }
+    }
+
+    public function getAllCustomers()
+    {
+        $dateC=Carbon::now()->setTimezone('GMT+5:30');
+        $dateC1=Carbon::now()->setTimezone('GMT+5:30');
+
+        $customers = CustomerModel::get();
+
+        $customersByDate = CustomerModel::groupBy('joineddate')
+        ->whereBetween("joineddate",[$dateC->startOfMonth()->format('Y-m-d'),$dateC->endOfMonth()->format('Y-m-d')])
+        ->select('joineddate',DB::raw('count(*) as CustomerCount'))
+        ->get();
+
+        $customersByDistrict = CustomerModel::groupBy('customerdistrict')
+        ->select('customerdistrict',DB::raw('count(*) as CustomerCount'))
+        ->get();
+
+        $customersByDistrict = CustomerModel::groupBy('customerdistrict')
+        ->select('customerdistrict',DB::raw('count(*) as CustomerCount'))
+        ->get();
+
+        $bestCustomerOrders = DB::table('orders')
+        ->join('customer', 'orders.customerid', '=', 'customer.customerid')
+        ->whereBetween("orders.orderdate",[$dateC1->startOfWeek()->format('Y-m-d'),$dateC1->endOfWeek()->format('Y-m-d')])
+        ->groupBy("orders.customerid")
+        ->select(
+            'customer.*',
+            DB::raw('count(*) as OrdersCount'),
+            DB::raw('sum(totalprice) as TotalPrice'),
+        )
+        ->orderByDesc('OrdersCount')
+        ->limit(5)
+        ->get();
+
+        return response()->json([
+            'status' => 200,
+            'customers' => $customers,
+            'customersByDate'=>$customersByDate,
+            'customersByDistrict'=>$customersByDistrict,
+            'bestCustomers'=>$bestCustomerOrders,
+
+        ]);
     }
 
 

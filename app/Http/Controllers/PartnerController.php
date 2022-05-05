@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\AdminModel;
 use App\Models\PartnerModel;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -22,6 +23,55 @@ class PartnerController extends Controller
             'partners' => $partner,
         ]);
     }
+
+    public function getAllPartnersAdmins()
+    {
+        $dateC = Carbon::now()->setTimezone('GMT+5:30');
+
+        $bestPartners = DB::table('orders')
+            ->join('service_listings', 'orders.listingid', '=', 'service_listings.listingid')
+            ->join('partner', 'service_listings.partnerid', '=', 'partner.partnerid')
+            ->join('services', 'partner.serviceid', '=', 'services.serviceid')
+            ->whereBetween("orders.orderdate", [$dateC->startOfMonth()->format('Y-m-d'), $dateC->endOfMonth()->format('Y-m-d')])
+            ->groupBy("partner.partnerid")
+            ->select(
+                'partner.partnername',
+                'partner.profilepic',
+                'services.servicename',
+                DB::raw('count(*) as OrdersCount'),
+                DB::raw('sum(totalprice) as TotalPrice'),
+            )
+            ->orderByDesc('OrdersCount')
+            ->limit(5)
+            ->get();
+
+        $partnersByDistrict = PartnerModel::groupBy('district')
+            ->select('district', DB::raw('count(*) as PartnerCount'))
+            ->get();
+
+        $bestPartnersByDate = DB::table('orders')
+            ->join('service_listings', 'orders.listingid', '=', 'service_listings.listingid')
+            ->join('partner', 'service_listings.partnerid', '=', 'partner.partnerid')
+            ->join('services', 'partner.serviceid', '=', 'services.serviceid')
+            ->whereBetween("orders.orderdate", [$dateC->startOfMonth()->format('Y-m-d'), $dateC->endOfMonth()->format('Y-m-d')])
+            ->groupBy("orders.orderdate")
+            ->select(
+                'partner.partnername',
+                'orders.orderdate',
+                DB::raw('count(*) as OrdersCount'),
+            )
+            ->orderByDesc('OrdersCount')
+            ->get();
+
+
+
+        return response()->json([
+            'status' => 200,
+            'partners' => $bestPartners,
+            'partnersGroupByDistrict' => $partnersByDistrict,
+        ]);
+    }
+
     public function getPartnersByStatus($status)
     {
         $partner = DB::table('partner')
@@ -72,10 +122,10 @@ class PartnerController extends Controller
             )
             ->get();
 
-        $sales=$totalSales->count()==0?[['TotPrice'=>0.00]]:$totalSales;
-        
+        $sales = $totalSales->count() == 0 ? [['TotPrice' => 0.00]] : $totalSales;
 
-    
+
+
         return response()->json([
             'status' => 200,
             'count' => ['totalOrders' => $totalOrders->count(), 'servicesListings' => $totalListings->count(), 'totalSales' => $sales[0]],
@@ -91,7 +141,7 @@ class PartnerController extends Controller
             ->join('service_listings', 'orders.listingid', '=', 'service_listings.listingid')
             ->join('partner', 'service_listings.partnerid', '=', 'partner.partnerid')
             ->join('services', 'partner.serviceid', '=', 'services.serviceid')
-            ->where('partner.partnerid',$id)
+            ->where('partner.partnerid', $id)
             ->limit(10)
             ->get();
 
@@ -102,15 +152,15 @@ class PartnerController extends Controller
     }
 
 
-    public function getPartnerSales()
+    public function getPartnerSales($id)
     {
-
         $orders = DB::table('orders')
             ->join('customer', 'orders.customerid', '=', 'customer.customerid')
             ->join('service_listings', 'orders.listingid', '=', 'service_listings.listingid')
             ->join('partner', 'service_listings.partnerid', '=', 'partner.partnerid')
             ->join('services', 'partner.serviceid', '=', 'services.serviceid')
             ->groupBy('orders.orderdate')
+            ->where('partner.partnerid', $id)
             ->select(
                 'orders.orderdate',
                 DB::raw('SUM(orders.totalprice) AS totalprice'),
@@ -188,7 +238,8 @@ class PartnerController extends Controller
             'nic' => 'required',
             'brcopy' => 'required',
             'accountstatus' => 'required',
-            'description' => 'required'
+            'description' => 'required',
+
         ]);
 
         // $token = $request->session()->token();
@@ -200,7 +251,7 @@ class PartnerController extends Controller
                 'validator_errors' => $validator->errors(),
             ]);
         } else {
-            $partner = DB::table('partner')->where('partnerid', $request->partnerid)->update([
+            $partner = PartnerModel::where('partnerid', $request->partnerid)->update([
                 'serviceid' => $request->serviceid,
                 'partnername' => $request->partnername,
                 'contactnumber' => $request->contactnumber,
@@ -216,7 +267,8 @@ class PartnerController extends Controller
                 'brcopy' => $request->brcopy,
                 'accountstatus' => $request->accountstatus,
                 'servicestatus' => $request->servicestatus,
-                'description' => $request->description
+                'description' => $request->description,
+                'partnerlatlon'=>$request->partnerlatlon
             ]);
 
 

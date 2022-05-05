@@ -17,13 +17,13 @@ class AdminController extends Controller
     {
 
         $validator = Validator::make($request->all(), [
-            'username' => 'required',
+            'username' =>['required','max:55'],
             'email' => 'required|email',
-            'nic' => 'required',
+            'nic' => ['required','max:25'],
             'contact' => 'required',
-            'password' => 'required',
-            'district' => 'required',
-            'role' => 'required',
+            'password' => ['required','max:125'],
+            'district' => ['required','max:50'],
+            'role' => ['required','max:45'],
         ]);
 
         $token = $request->session()->token();
