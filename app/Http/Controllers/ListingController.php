@@ -141,6 +141,55 @@ class ListingController extends Controller
     }
 
 
+    public function getListingsByPartnerIDAdmin()
+    {
+        $listings = DB::table('service_listings')
+            ->join('listing_images', 'service_listings.listingid', '=', 'listing_images.listingid')
+            ->join('partner','service_listings.partnerid','=','partner.partnerid')
+            ->join('services','partner.serviceid','=','services.serviceid')
+            ->groupBy('listing_images.listingid')
+            ->where('service_listings.listingstatus',"Active")
+            ->get();
+        return response()->json([
+            'status' => 200,
+            'listings' => $listings,
+        ]);
+    }
+
+
+    public function getDeletedListingsByPartnerIDAdmin()
+    {
+        $listings = DB::table('service_listings')
+            ->join('listing_images', 'service_listings.listingid', '=', 'listing_images.listingid')
+            ->join('partner','service_listings.partnerid','=','partner.partnerid')
+            ->join('services','partner.serviceid','=','services.serviceid')
+            ->groupBy('listing_images.listingid')
+            ->where('service_listings.listingstatus',"Deleted")
+            ->get();
+        return response()->json([
+            'status' => 200,
+            'listings' => $listings,
+        ]);
+    }
+
+
+    public function getListingsByServiceID($id)
+    {
+        $listings = DB::table('service_listings')
+            ->join('listing_images', 'service_listings.listingid', '=', 'listing_images.listingid')
+            ->join('partner','service_listings.partnerid','=','partner.partnerid')
+            ->join('services','partner.serviceid','=','services.serviceid')
+            ->groupBy('listing_images.listingid')
+            ->where('services.serviceid',$id)
+            ->where('service_listings.listingstatus',"Active")
+            ->get();
+        return response()->json([
+            'status' => 200,
+            'listings' => $listings,
+        ]);
+    }
+
+
     public function getDeletedListingsByPartnerID($id)
     {
         $listings = DB::table('service_listings')

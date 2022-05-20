@@ -21,6 +21,19 @@ class ServicesController extends Controller{
         ]);
     }
 
+
+    public function getservicesByID($id)
+    {
+        $service = ServicesModel::where('serviceid', $id)
+            ->get();
+
+        return response()->json([
+            'status' => 200,
+            'service' => $service,
+        ]);
+    }
+
+
     public function updateService(Request $request)
     {
         $services = DB::table('services')->where('serviceid', $request->serviceid)->update([

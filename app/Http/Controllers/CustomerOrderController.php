@@ -52,7 +52,7 @@ class CustomerOrderController extends Controller
                     'address' => $request->address,
                     'district' => $request->district,
                     'paymentoption' => $request->paymentoption,
-                    'customerlatlan'=>$request->customerlatlan,
+                    'customerlatlan' => $request->customerlatlan,
                     'listingtypeid' => $value["listingtypeid"],
                     'quantity' => $value["quantity"],
                     'totalprice' => $value["totalprice"],
@@ -79,7 +79,7 @@ class CustomerOrderController extends Controller
                     'district' => $request->district,
 
                     'paymentoption' => $request->paymentoption,
-                    'customerlatlan'=>$request->customerlatlan,
+                    'customerlatlan' => $request->customerlatlan,
                     'listingtypeid' => $value["listingtypeid"],
                     'quantity' => $value["quantity"],
                     'totalprice' => $value["totalprice"],
@@ -152,6 +152,27 @@ class CustomerOrderController extends Controller
                 DB::raw('SUM(services.servicetype="MainService") AS MainServices'),
                 DB::raw('SUM(services.servicetype="OtherService") AS EasyServices'),
             )
+            ->get();
+
+        return response()->json([
+            'status' => 200,
+            'orders' => $orders,
+        ]);
+    }
+
+    public function getCustomerOrdersByID($id)
+    {
+        $orders = DB::table('orders')
+            ->join('customer', 'orders.customerid', '=', 'customer.customerid')
+            ->join('service_listings', 'orders.listingid', '=', 'service_listings.listingid')
+            ->join('listing_images', 'service_listings.listingid', '=', 'listing_images.listingid')
+            ->join('partner', 'service_listings.partnerid', '=', 'partner.partnerid')
+            ->join('services', 'partner.serviceid', '=', 'services.serviceid')
+            ->join('deliveryjob','orders.orderid','deliveryjob.orderid')
+            ->groupBy('listing_images.listingid')
+            ->select('deliveryjob.deliverytotalprice','customer.*','service_listings.*','listing_images.*','partner.partnername','orders.address AS orderaddress','orders.contactnumber as orderContact','orders.*')
+            ->where('orders.customerid',$id)
+            ->orderBy('orders.orderdate','desc')
             ->get();
 
         return response()->json([

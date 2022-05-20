@@ -19,7 +19,7 @@ class DeliveryJobModel extends Model
         'estimatetime',
         'estimatedate',
         'totaldistance',
-        'totalprice',
+        'deliverytotalprice',
         'totalPayable'
 
     ];

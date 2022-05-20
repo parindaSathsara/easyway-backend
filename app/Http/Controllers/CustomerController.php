@@ -47,7 +47,7 @@ class CustomerController extends Controller
                 'customerusername' => $request->customerusername,
                 'customercontact' => $request->customercontact,
                 'customerhomeaddress' => $request->customerhomeaddress,
-                
+
                 'joineddate' => date('Y-m-d')
             ]);
 
@@ -57,6 +57,50 @@ class CustomerController extends Controller
                 [
                     'status' => 200,
                     'token' => $token,
+                    'message' => 'Customer Added Successfully',
+                ]
+            );
+        }
+    }
+
+
+    public function updateCustomer(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'customername' => 'required',
+            'customeremail' => 'required',
+            'profilepic' => 'required',
+            'customerdistrict' => 'required',
+            'customerpassword' => 'required',
+            'customerusername' => 'required',
+            'customercontact' => 'required',
+            'customerhomeaddress' => 'required',
+        ]);
+
+
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 400,
+                'validator_errors' => $validator->errors(),
+            ]);
+        } else {
+            DB::table('customer')->where('customerid',$request->customerid)
+            ->update([
+                'customername' => $request->customername,
+                'customeremail' => $request->customeremail,
+                'profilepic' => $request->profilepic,
+                'customerdistrict' => $request->customerdistrict,
+                'customerpassword' => $request->customerpassword,
+                'customerusername' => $request->customerusername,
+                'customercontact' => $request->customercontact,
+                'customerhomeaddress' => $request->customerhomeaddress,
+            ]);
+
+
+            return response()->json(
+                [
+                    'status' => 200,
                     'message' => 'Customer Added Successfully',
                 ]
             );
@@ -83,43 +127,56 @@ class CustomerController extends Controller
 
     public function getAllCustomers()
     {
-        $dateC=Carbon::now()->setTimezone('GMT+5:30');
-        $dateC1=Carbon::now()->setTimezone('GMT+5:30');
+        $dateC = Carbon::now()->setTimezone('GMT+5:30');
+        $dateC1 = Carbon::now()->setTimezone('GMT+5:30');
 
         $customers = CustomerModel::get();
 
         $customersByDate = CustomerModel::groupBy('joineddate')
-        ->whereBetween("joineddate",[$dateC->startOfMonth()->format('Y-m-d'),$dateC->endOfMonth()->format('Y-m-d')])
-        ->select('joineddate',DB::raw('count(*) as CustomerCount'))
-        ->get();
+            ->whereBetween("joineddate", [$dateC->startOfMonth()->format('Y-m-d'), $dateC->endOfMonth()->format('Y-m-d')])
+            ->select('joineddate', DB::raw('count(*) as CustomerCount'))
+            ->get();
 
         $customersByDistrict = CustomerModel::groupBy('customerdistrict')
-        ->select('customerdistrict',DB::raw('count(*) as CustomerCount'))
-        ->get();
+            ->select('customerdistrict', DB::raw('count(*) as CustomerCount'))
+            ->get();
 
         $customersByDistrict = CustomerModel::groupBy('customerdistrict')
-        ->select('customerdistrict',DB::raw('count(*) as CustomerCount'))
-        ->get();
+            ->select('customerdistrict', DB::raw('count(*) as CustomerCount'))
+            ->get();
+
 
         $bestCustomerOrders = DB::table('orders')
-        ->join('customer', 'orders.customerid', '=', 'customer.customerid')
-        ->whereBetween("orders.orderdate",[$dateC1->startOfWeek()->format('Y-m-d'),$dateC1->endOfWeek()->format('Y-m-d')])
-        ->groupBy("orders.customerid")
-        ->select(
-            'customer.*',
-            DB::raw('count(*) as OrdersCount'),
-            DB::raw('sum(totalprice) as TotalPrice'),
-        )
-        ->orderByDesc('OrdersCount')
-        ->limit(5)
-        ->get();
+            ->join('customer', 'orders.customerid', '=', 'customer.customerid')
+            ->whereBetween("orders.orderdate", [$dateC1->startOfWeek()->format('Y-m-d'), $dateC1->endOfWeek()->format('Y-m-d')])
+            ->groupBy("orders.customerid")
+            ->select(
+                'customer.*',
+                DB::raw('count(*) as OrdersCount'),
+                DB::raw('sum(totalprice) as TotalPrice'),
+            )
+            ->orderByDesc('OrdersCount')
+            ->limit(5)
+            ->get();
 
         return response()->json([
             'status' => 200,
             'customers' => $customers,
-            'customersByDate'=>$customersByDate,
-            'customersByDistrict'=>$customersByDistrict,
-            'bestCustomers'=>$bestCustomerOrders,
+            'customersByDate' => $customersByDate,
+            'customersByDistrict' => $customersByDistrict,
+            'bestCustomers' => $bestCustomerOrders,
+
+        ]);
+    }
+
+
+    public function getCustomerByID($id)
+    {
+        $customerByID = CustomerModel::where('customerid', $id)->get();
+
+        return response()->json([
+            'status' => 200,
+            'customers' => $customerByID,
 
         ]);
     }

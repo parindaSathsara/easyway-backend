@@ -37,7 +37,7 @@ class RiderController extends Controller
                 'riderpassword' => Hash::make($request->riderpassword),
                 'riderusername' => $request->riderusername,
                 'riderdistrict' => $request->riderdistrict,
-                'accoutnstatus' => "AccountCreated",
+                'accountstatus' => "AccountCreated",
                 'riderstatus' => "NotAvailable"
             ]);
 
@@ -110,6 +110,57 @@ class RiderController extends Controller
                 ]
             );
         }
+    }
+
+
+
+    public function getRiderSales($id)
+    {
+        $orders = DB::table('deliveryjob')
+            ->join('orders', 'deliveryjob.orderid', '=', 'orders.orderid')
+            ->groupBy('orders.orderdate')
+            ->where('deliveryjob.riderid', $id)
+            ->select(
+                'orders.orderdate',
+                DB::raw('SUM(deliveryjob.deliverytotalprice) AS totalprice'),
+            )
+            ->get();
+
+        return response()->json([
+            'status' => 200,
+            'orders' => $orders,
+        ]);
+    }
+
+
+
+    public function getRiderDataCount($id)
+    {
+
+        $totalOrders = DB::table('deliveryjob')
+            ->where('riderid', $id)
+            ->get();
+
+        $pendingOrders = DB::table('deliveryjob')
+            ->where('riderid', $id)
+            ->where('status', '!=', "DeliverToCustomer")
+            ->get();
+
+        $totalSales = DB::table('deliveryjob')
+            ->where('riderid', $id)
+            ->select(
+                DB::raw('SUM(deliverytotalprice) AS TotPrice'),
+            )
+            ->get();
+
+        $sales = $totalSales->count() == 0 ? [['TotPrice' => 0.00]] : $totalSales;
+
+
+
+        return response()->json([
+            'status' => 200,
+            'count' => ['totalOrders' => $totalOrders->count(), 'pendingOrders' => $pendingOrders->count(), 'totalSales' => $sales[0]],
+        ]);
     }
 
 
@@ -220,6 +271,25 @@ class RiderController extends Controller
     }
 
 
+    public function getAllRiderOrders($id)
+    {
+        $allOrders = DB::table('deliveryjob')
+            ->join('orders', 'deliveryjob.orderid', '=', 'orders.orderid')
+            ->join('customer', 'orders.customerid', '=', 'customer.customerid')
+            ->join('service_listings', 'orders.listingid', '=', 'service_listings.listingid')
+            ->join('partner', 'service_listings.partnerid', '=', 'partner.partnerid')
+            ->join('services', 'partner.serviceid', '=', 'services.serviceid')
+            ->join('deliveryrider', 'deliveryjob.riderid', '=', 'deliveryrider.riderid')
+            ->where('deliveryrider.riderid', $id)
+            ->get();
+
+        return response()->json([
+            'status' => 200,
+            'allOrders' => $allOrders,
+        ]);
+    }
+
+
     public function getOrdersNotCollected($id)
     {
         $deliveryrider = DB::table('deliveryrider')
@@ -243,7 +313,7 @@ class RiderController extends Controller
             ->join('services', 'partner.serviceid', '=', 'services.serviceid')
             ->join('deliveryrider', 'deliveryjob.riderid', '=', 'deliveryrider.riderid')
             ->where('deliveryrider.riderid', $id)
-            ->where('orders.orderstatus', 'RiderAccept')
+            ->where('orders.orderstatus', 'ProcessByPartner')
             ->get();
 
         $pendingOrders = DB::table('deliveryjob')
@@ -271,7 +341,7 @@ class RiderController extends Controller
             'status' => 200,
             'orders' => $orders,
             'acceptedOrders' => $acceptedOrders,
-            'pendingToDelivery'=>$pendingOrders
+            'pendingToDelivery' => $pendingOrders
         ]);
     }
 }

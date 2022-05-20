@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\AdminModel;
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -55,6 +56,49 @@ class AdminController extends Controller
                 ]
             );
         }
+    }
+
+
+    
+    public function getOrdersAll()
+    {
+
+        $dateC = Carbon::now()->setTimezone('GMT+5:30');
+        $dateToday = Carbon::now()->setTimezone('GMT+5:30');
+
+        $orders = DB::table('orders')
+            ->join('customer', 'orders.customerid', '=', 'customer.customerid')
+            ->join('service_listings', 'orders.listingid', '=', 'service_listings.listingid')
+            ->join('partner', 'service_listings.partnerid', '=', 'partner.partnerid')
+            ->join('services', 'partner.serviceid', '=', 'services.serviceid')
+            ->orderBy('orders.orderdate', 'desc')
+            ->get();
+
+        $ordersLastMonth = DB::table('orders')
+            ->join('customer', 'orders.customerid', '=', 'customer.customerid')
+            ->join('service_listings', 'orders.listingid', '=', 'service_listings.listingid')
+            ->join('partner', 'service_listings.partnerid', '=', 'partner.partnerid')
+            ->join('services', 'partner.serviceid', '=', 'services.serviceid')
+            ->whereBetween("orders.orderdate", [$dateC->startOfMonth()->format('Y-m-d'), $dateC->endOfMonth()->format('Y-m-d')])
+            ->orderBy('orders.orderdate', 'desc')
+            ->get();
+
+        $ordersToday = DB::table('orders')
+            ->join('customer', 'orders.customerid', '=', 'customer.customerid')
+            ->join('service_listings', 'orders.listingid', '=', 'service_listings.listingid')
+            ->join('partner', 'service_listings.partnerid', '=', 'partner.partnerid')
+            ->join('services', 'partner.serviceid', '=', 'services.serviceid')
+            ->where("orders.orderdate", $dateToday->today()->format('Y-m-d'))
+            ->orderBy('orders.orderdate', 'desc')
+            ->get();
+
+
+        return response()->json([
+            'status' => 200,
+            'orders' => $orders,
+            'ordersLastMonth' => $ordersLastMonth,
+            'ordersToday' => $ordersToday,
+        ]);
     }
 
 

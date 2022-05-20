@@ -19,6 +19,13 @@ class DeliveryJobController extends Controller
 
     public function updateDeliveryStatus(Request $request)
     {
+        if (($request->orderstatus) == "ProcessByPartner") {
+            DB::table('completedpartnerorders')->insert([
+                'partnerid' => $request->partnerid,
+                'orderid' =>$request->orderid,
+                'orderdate' => $request->orderdate,
+            ]);
+        }
         DB::table('orders')->where('orderid', $request->orderid)->update(['orderstatus' => $request->orderstatus]);
         DB::table('deliveryjob')->where('orderid', $request->orderid)->update(['status' => $request->orderstatus]);
         return response()->json(
@@ -38,7 +45,7 @@ class DeliveryJobController extends Controller
             'estimatetime' => 'required',
             'estimatedate' => 'required',
             'totaldistance' => 'required',
-            'totalprice' => 'required',
+            'deliverytotalprice' => 'required',
             'totalPayable' => 'required'
         ]);
 
@@ -59,7 +66,7 @@ class DeliveryJobController extends Controller
                 'estimatetime' => $request->estimatetime,
                 'estimatedate' => $request->estimatedate,
                 'totaldistance' => $request->totaldistance,
-                'totalprice' => $request->totalprice,
+                'deliverytotalprice' => $request->deliverytotalprice,
                 'status' => 'RiderAccept',
                 'totalPayable' => $request->totalPayable
             ]);

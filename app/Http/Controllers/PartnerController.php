@@ -16,7 +16,14 @@ class PartnerController extends Controller
 
     public function getAllPartners()
     {
-        $partner = PartnerModel::where('accountstatus', '!=', 'AccountCreated')->get();
+        $partner = DB::table('partner')
+            ->join('services', 'partner.serviceid', '=', 'services.serviceid')
+            ->join('service_listings', 'partner.partnerid', '=', 'service_listings.partnerid')
+            ->join('orders', 'service_listings.listingid', '=', 'orders.listingid')
+            ->groupBy('partner.partnerid')
+            ->select('partner.*', 'services.*', 'service_listings.*', 'orders.*', DB::raw('count(*) as OrdersCount'),)
+            ->where('accountstatus', '!=', 'AccountCreated')
+            ->get();
 
         return response()->json([
             'status' => 200,
@@ -91,7 +98,6 @@ class PartnerController extends Controller
         $partner = PartnerModel::where('partnerid', $id)
             ->get();
 
-
         return response()->json([
             'status' => 200,
             'partners' => $partner,
@@ -136,18 +142,77 @@ class PartnerController extends Controller
     public function getRecentOrdersPartners($id)
     {
 
+        $dateC = Carbon::now()->setTimezone('GMT+5:30');
+        $dateToday = Carbon::now()->setTimezone('GMT+5:30');
+
         $orders = DB::table('orders')
             ->join('customer', 'orders.customerid', '=', 'customer.customerid')
             ->join('service_listings', 'orders.listingid', '=', 'service_listings.listingid')
             ->join('partner', 'service_listings.partnerid', '=', 'partner.partnerid')
             ->join('services', 'partner.serviceid', '=', 'services.serviceid')
             ->where('partner.partnerid', $id)
+            ->orderBy('orders.orderdate', 'desc')
             ->limit(10)
+            ->get();
+
+        $ordersLastMonth = DB::table('orders')
+            ->join('customer', 'orders.customerid', '=', 'customer.customerid')
+            ->join('service_listings', 'orders.listingid', '=', 'service_listings.listingid')
+            ->join('partner', 'service_listings.partnerid', '=', 'partner.partnerid')
+            ->join('services', 'partner.serviceid', '=', 'services.serviceid')
+            ->where('partner.partnerid', $id)
+            ->whereBetween("orders.orderdate", [$dateC->startOfMonth()->format('Y-m-d'), $dateC->endOfMonth()->format('Y-m-d')])
+            ->orderBy('orders.orderdate', 'desc')
+            ->get();
+
+        $ordersToday = DB::table('orders')
+            ->join('customer', 'orders.customerid', '=', 'customer.customerid')
+            ->join('service_listings', 'orders.listingid', '=', 'service_listings.listingid')
+            ->join('partner', 'service_listings.partnerid', '=', 'partner.partnerid')
+            ->join('services', 'partner.serviceid', '=', 'services.serviceid')
+            ->where('partner.partnerid', $id)
+            ->where("orders.orderdate", $dateToday->today()->format('Y-m-d'))
+            ->orderBy('orders.orderdate', 'desc')
+            ->get();
+
+
+        return response()->json([
+            'status' => 200,
+            'orders' => $orders,
+            'ordersLastMonth' => $ordersLastMonth,
+            'ordersToday' => $ordersToday,
+        ]);
+    }
+
+
+    public function getPartnerOrdersByID($id)
+    {
+        $partnerOrders = DB::table('deliveryjob')
+            ->join('orders', 'deliveryjob.orderid', '=', 'orders.orderid')
+            ->join('customer', 'orders.customerid', '=', 'customer.customerid')
+            ->join('service_listings', 'orders.listingid', '=', 'service_listings.listingid')
+            ->join('partner', 'service_listings.partnerid', '=', 'partner.partnerid')
+            ->join('services', 'partner.serviceid', '=', 'services.serviceid')
+            ->join('deliveryrider', 'deliveryjob.riderid', '=', 'deliveryrider.riderid')
+            ->where('service_listings.partnerid', $id)
+            ->where('orders.orderstatus', 'RiderAccept')
+            ->orderBy('deliveryjob.jobid', 'asc')
+            ->get();
+
+        $completedOrders = DB::table('completedpartnerorders')
+            ->join('orders', 'completedpartnerorders.orderid', '=', 'orders.orderid')
+            ->join('customer', 'orders.customerid', '=', 'customer.customerid')
+            ->join('service_listings', 'orders.listingid', '=', 'service_listings.listingid')
+            ->join('partner', 'service_listings.partnerid', '=', 'partner.partnerid')
+            ->join('services', 'partner.serviceid', '=', 'services.serviceid')
+            ->where('completedpartnerorders.partnerid', $id)
+            ->orderBy('completedpartnerorders.partnerid', 'desc')
             ->get();
 
         return response()->json([
             'status' => 200,
-            'orders' => $orders
+            'partnerOrders' => $partnerOrders,
+            'completedOrders' => $completedOrders
         ]);
     }
 
@@ -268,7 +333,7 @@ class PartnerController extends Controller
                 'accountstatus' => $request->accountstatus,
                 'servicestatus' => $request->servicestatus,
                 'description' => $request->description,
-                'partnerlatlon'=>$request->partnerlatlon
+                'partnerlatlon' => $request->partnerlatlon
             ]);
 
 

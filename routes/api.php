@@ -43,9 +43,17 @@ Route::post('/listings/updateListingActive/{id}',[ListingController::class,'upda
 Route::get('/riders/getRiders/{id}',[RiderController::class,'getRiders']);
 Route::get('/riders/getAllRiders/',[RiderController::class,'getAllRiders']);
 Route::get('/riders/getOrdersNotCollected/{id}',[RiderController::class,'getOrdersNotCollected']);
+Route::get('/riders/getAllRiderOrders/{id}',[RiderController::class,'getAllRiderOrders']);
+Route::get('/riders/getRiderSales/{id}',[RiderController::class,'getRiderSales']);
+
 Route::get('/riders/getOrderByID/{id}',[RiderController::class,'getOrderByID']);
 Route::get('/riders/getRidersByStatus/{status}',[RiderController::class,'getRidersByStatus']);
 Route::post('/riders/riderUpdateProfile',[RiderController::class,'riderUpdateProfile']);
+
+
+
+Route::get('/partners/getListingsByPartnerIDAdmin/',[ListingController::class,'getListingsByPartnerIDAdmin']);
+Route::get('/partners/getDeletedListingsByPartnerIDAdmin/',[ListingController::class,'getDeletedListingsByPartnerIDAdmin']);
 
 Route::get('/partners/getAllPartners/',[PartnerController::class,'getAllPartners']);
 Route::get('/partners/getPartnersByStatus/{status}',[PartnerController::class,'getPartnersByStatus']);
@@ -60,6 +68,8 @@ Route::post('/partners/updateProfile',[PartnerController::class,'partnerUpdateAc
 
 Route::get('/getDataCount',[AdminController::class,'getDataCounts']);
 
+
+Route::post('customers/updateCustomer',[CustomerController::class,'updateCustomer']);
 Route::post('customers/registerCustomer',[CustomerController::class,'registerCustomer']);
 Route::post('customers/loginCustomer',[CustomerController::class,'loginCustomer']);
 Route::post('customers/addToCart',[CartController::class,'addToCart']);
@@ -67,6 +77,9 @@ Route::get('customers/getCarts/{id}',[CartController::class,'getCart']);
 Route::get('customers/getCartsByID/{id}',[CartController::class,'getCartByID']);
 Route::post('customers/deleteCart/{id}',[CartController::class,'deleteCartItem']);
 Route::get('customers/getCartItemCount/{id}',[CartController::class,'getCartItemCount']);
+Route::get('customers/getCustomerOrdersByID/{id}',[CustomerOrderController::class,'getCustomerOrdersByID']);
+
+Route::get('customers/getCustomerByID/{id}',[CustomerController::class,'getCustomerByID']);
 
 Route::post('deliveryjob/newjob',[DeliveryJobController::class,'addNewJob']);
 Route::post('deliveryjob/updateDeliveryStatus',[DeliveryJobController::class,'updateDeliveryStatus']);
@@ -78,10 +91,18 @@ Route::get('administration/getOrderCounts',[CustomerOrderController::class,'getO
 Route::get('administration/getServicesOrders',[CustomerOrderController::class,'getServicesOrders']);
 Route::get('administration/getAllCustomers',[CustomerController::class,'getAllCustomers']);
 Route::get('administration/getAllPartnersAdmins',[PartnerController::class,'getAllPartnersAdmins']);
+Route::get('/administration/getOrdersAll/',[AdminController::class,'getOrdersAll']);
+Route::get('/administration/getListingsByServiceID/{id}',[ListingController::class,'getListingsByServiceID']);
+
+Route::get('/services/getServices/{id}',[ServicesController::class,'getservicesByID']);
+
+Route::get('/riders/getRiderDataCount/{id}',[RiderController::class,'getRiderDataCount']);
 
 Route::get('/partners/getPartnerDataCount/{id}',[PartnerController::class,'getPartnerDataCount']);
 Route::get('/partners/getRecentOrdersPartners/{id}',[PartnerController::class,'getRecentOrdersPartners']);
 Route::get('/partners/getPartnerSales/{id}',[PartnerController::class,'getPartnerSales']);
+Route::get('/partners/getPartnerOrdersByID/{id}',[PartnerController::class,'getPartnerOrdersByID']);
+
 
 Route::middleware('auth:api')->get('/user', function (Request $request) {
     return $request->user();
